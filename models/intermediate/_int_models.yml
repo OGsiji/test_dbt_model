@@ -1,0 +1,28 @@
+version: 2
+
+models:
+  - name: int_orders_enriched
+    description: >
+      Order-grain model joining orders with user context, payment data, and aggregated
+      item counts. Feeds both fct_orders and the semantic layer.
+    columns:
+      - name: order_id
+        tests: [unique, not_null]
+      - name: user_id
+        tests: [not_null]
+      - name: order_status
+        tests:
+          - accepted_values:
+              values: ['pending','processing','shipped','delivered','cancelled','refunded']
+      - name: total_amount
+        tests: [not_null]
+
+  - name: int_product_metrics
+    description: >
+      Product-grain model combining catalogue data with sales aggregates and review
+      summaries. Feeds dim_products and the semantic layer.
+    columns:
+      - name: product_id
+        tests: [unique, not_null]
+      - name: sku
+        tests: [unique, not_null]

@@ -1,0 +1,118 @@
+version: 2
+
+models:
+  - name: stg_categories
+    description: "Cleaned category dimension from raw source."
+    columns:
+      - name: category_id
+        description: "Surrogate key for category."
+        tests: [unique, not_null]
+      - name: category_name
+        tests: [unique, not_null]
+      - name: category_slug
+        tests: [unique, not_null]
+
+  - name: stg_products
+    description: "Cleaned product catalogue with derived margin fields."
+    columns:
+      - name: product_id
+        tests: [unique, not_null]
+      - name: category_id
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_categories')
+              field: category_id
+      - name: sku
+        tests: [unique, not_null]
+      - name: unit_price
+        tests: [not_null]
+      - name: is_active
+        tests:
+          - accepted_values:
+              values: [true, false]
+
+  - name: stg_users
+    description: "Cleaned user accounts with engagement status."
+    columns:
+      - name: user_id
+        tests: [unique, not_null]
+      - name: email
+        tests: [unique, not_null]
+      - name: engagement_status
+        tests:
+          - accepted_values:
+              values: ['active', 'warm', 'dormant', 'never']
+
+  - name: stg_orders
+    description: "Cleaned order headers with fulfillment timing fields."
+    columns:
+      - name: order_id
+        tests: [unique, not_null]
+      - name: user_id
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_users')
+              field: user_id
+      - name: order_status
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['pending','processing','shipped','delivered','cancelled','refunded']
+
+  - name: stg_order_items
+    description: "Cleaned order line items."
+    columns:
+      - name: order_item_id
+        tests: [unique, not_null]
+      - name: order_id
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_orders')
+              field: order_id
+      - name: product_id
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_products')
+              field: product_id
+      - name: quantity
+        tests: [not_null]
+
+  - name: stg_payments
+    description: "Cleaned payment records with collected/refunded amounts."
+    columns:
+      - name: payment_id
+        tests: [unique, not_null]
+      - name: order_id
+        tests:
+          - not_null
+          - unique
+          - relationships:
+              to: ref('stg_orders')
+              field: order_id
+      - name: payment_method
+        tests:
+          - accepted_values:
+              values: ['card','paypal','bank_transfer','crypto']
+      - name: payment_status
+        tests:
+          - accepted_values:
+              values: ['pending','completed','failed','refunded']
+
+  - name: stg_reviews
+    description: "Cleaned product reviews with sentiment classification."
+    columns:
+      - name: review_id
+        tests: [unique, not_null]
+      - name: rating
+        tests:
+          - not_null
+          - accepted_values:
+              values: [1, 2, 3, 4, 5]
+      - name: sentiment
+        tests:
+          - accepted_values:
+              values: ['positive', 'neutral', 'negative']

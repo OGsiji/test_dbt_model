@@ -1,0 +1,34 @@
+version: 2
+
+models:
+  - name: fct_payments
+    description: >
+      Payment fact table at payment grain. Joins payment records with order timing for
+      month/week-level financial reporting. Powers the finance dashboard and revenue
+      reconciliation pipelines.
+    columns:
+      - name: payment_id
+        tests: [unique, not_null]
+      - name: order_id
+        tests:
+          - not_null
+          - unique
+          - relationships:
+              to: ref('fct_orders')
+              field: order_id
+      - name: payment_method
+        tests:
+          - accepted_values:
+              values: ['card','paypal','bank_transfer','crypto']
+      - name: payment_status
+        tests:
+          - accepted_values:
+              values: ['pending','completed','failed','refunded']
+      - name: amount
+        description: "Charged amount in the payment currency."
+        tests: [not_null]
+      - name: ledger_type
+        description: "Financial classification: revenue / refund / failed_attempt / pending."
+        tests:
+          - accepted_values:
+              values: ['revenue','refund','failed_attempt','pending']

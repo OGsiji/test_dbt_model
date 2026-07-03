@@ -1,0 +1,42 @@
+version: 2
+
+models:
+  - name: sem_sales_summary
+    description: >
+      Daily sales roll-up (revenue, orders, customers). Primary source for the
+      analytics dashboard and management reporting APIs.
+    columns:
+      - name: order_date
+        tests: [not_null]
+      - name: gross_revenue
+        description: "Sum of total_amount across all orders in the period."
+      - name: net_revenue
+        description: "Sum of amount_collected — excludes pending and failed payments."
+
+  - name: sem_product_performance
+    description: >
+      Active products ranked by a relevance score combining rating, sales velocity,
+      and stock availability. Used by catalogue browse, search, and recommendation APIs.
+    columns:
+      - name: product_id
+        tests: [unique, not_null]
+      - name: relevance_score
+        description: "Composite ranking score (0-100+) for default product ordering."
+
+  - name: sem_customer_360
+    description: >
+      Full customer profile with spend, engagement, and RFM attributes.
+      Consumed by mobile profile screens, CRM integrations, and personalisation APIs.
+    columns:
+      - name: user_id
+        tests: [unique, not_null]
+      - name: email
+        tests: [unique, not_null]
+      - name: customer_segment
+        tests:
+          - accepted_values:
+              values: ['prospect','new','repeat','loyal','vip']
+      - name: rfm_status
+        tests:
+          - accepted_values:
+              values: ['active','at_risk','churned','never_purchased']

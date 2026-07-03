@@ -1,0 +1,106 @@
+version: 2
+
+models:
+  - name: dim_users
+    description: >
+      Customer dimension table. One row per user, enriched with lifetime order stats,
+      customer segment (prospect → vip), and RFM (recency/frequency/monetary) status.
+      Used by web, mobile, and CRM systems to personalise experiences.
+    columns:
+      - name: user_id
+        description: "Surrogate key for the user."
+        tests: [unique, not_null]
+      - name: email
+        description: "Login email address."
+        tests: [unique, not_null]
+      - name: customer_segment
+        description: "Spend-based tier: prospect / new / repeat / loyal / vip."
+        tests:
+          - accepted_values:
+              values: ['prospect','new','repeat','loyal','vip']
+      - name: rfm_status
+        description: "Recency-based status: active / at_risk / churned / never_purchased."
+        tests:
+          - accepted_values:
+              values: ['active','at_risk','churned','never_purchased']
+      - name: lifetime_value
+        description: "Sum of delivered order totals."
+        tests: [not_null]
+      - name: lifetime_orders
+        description: "Total number of orders placed."
+        tests: [not_null]
+
+  - name: dim_products
+    description: >
+      Product dimension table. One row per product with catalogue details, pricing,
+      inventory status, sales aggregates, and review summaries.
+      Powers the product catalogue API and search.
+    columns:
+      - name: product_id
+        tests: [unique, not_null]
+      - name: sku
+        tests: [unique, not_null]
+      - name: unit_price
+        tests: [not_null]
+      - name: is_active
+        tests:
+          - accepted_values:
+              values: [true, false]
+      - name: sales_tier
+        description: "Popularity tier derived from units sold: never_sold / slow_mover / popular / bestseller."
+        tests:
+          - accepted_values:
+              values: ['never_sold','slow_mover','popular','bestseller']
+      - name: stock_status
+        description: "Inventory availability: out_of_stock / low_stock / in_stock."
+        tests:
+          - accepted_values:
+              values: ['out_of_stock','low_stock','in_stock']
+
+  - name: fct_orders
+    description: >
+      Order fact table at order grain. Includes customer context, payment details,
+      fulfilment timing, and monthly/weekly date dimensions.
+      The primary table for order management APIs and sales dashboards.
+    columns:
+      - name: order_id
+        tests: [unique, not_null]
+      - name: user_id
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_users')
+              field: user_id
+      - name: order_status
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['pending','processing','shipped','delivered','cancelled','refunded']
+      - name: total_amount
+        tests: [not_null]
+      - name: amount_collected
+        description: "Revenue recognised (completed payments only)."
+
+  - name: fct_order_items
+    description: >
+      Order-item fact table at line-item grain. Includes product, category, pricing,
+      cost of goods, and gross profit per line. Used for category-level P&L reporting.
+    columns:
+      - name: order_item_id
+        tests: [unique, not_null]
+      - name: order_id
+        tests:
+          - not_null
+          - relationships:
+              to: ref('fct_orders')
+              field: order_id
+      - name: product_id
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_products')
+              field: product_id
+      - name: quantity
+        tests: [not_null]
+      - name: line_total
+        tests: [not_null]

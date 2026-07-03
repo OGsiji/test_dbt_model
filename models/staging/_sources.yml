@@ -1,0 +1,119 @@
+version: 2
+
+sources:
+  - name: ecommerce
+    description: "Raw e-commerce transactional tables loaded into PostgreSQL."
+    database: ogtest
+    schema: public
+    tables:
+      - name: categories
+        description: "Product category hierarchy."
+        columns:
+          - name: id
+            description: "Primary key."
+            tests: [unique, not_null]
+          - name: name
+            tests: [unique, not_null]
+          - name: slug
+            tests: [unique, not_null]
+
+      - name: products
+        description: "Product catalogue with pricing and inventory."
+        columns:
+          - name: id
+            tests: [unique, not_null]
+          - name: category_id
+            tests:
+              - not_null
+              - relationships:
+                  to: source('ecommerce', 'categories')
+                  field: id
+          - name: sku
+            tests: [unique, not_null]
+          - name: price
+            tests: [not_null]
+          - name: is_active
+            tests:
+              - accepted_values:
+                  values: [true, false]
+
+      - name: users
+        description: "Registered customer accounts."
+        columns:
+          - name: id
+            tests: [unique, not_null]
+          - name: email
+            tests: [unique, not_null]
+
+      - name: orders
+        description: "Customer order headers."
+        columns:
+          - name: id
+            tests: [unique, not_null]
+          - name: user_id
+            tests:
+              - not_null
+              - relationships:
+                  to: source('ecommerce', 'users')
+                  field: id
+          - name: status
+            tests:
+              - not_null
+              - accepted_values:
+                  values: ['pending','processing','shipped','delivered','cancelled','refunded']
+          - name: total_amount
+            tests: [not_null]
+
+      - name: order_items
+        description: "Line items within each order."
+        columns:
+          - name: id
+            tests: [unique, not_null]
+          - name: order_id
+            tests:
+              - not_null
+              - relationships:
+                  to: source('ecommerce', 'orders')
+                  field: id
+          - name: product_id
+            tests:
+              - not_null
+              - relationships:
+                  to: source('ecommerce', 'products')
+                  field: id
+          - name: quantity
+            tests: [not_null]
+          - name: unit_price
+            tests: [not_null]
+
+      - name: payments
+        description: "Payment records tied to orders."
+        columns:
+          - name: id
+            tests: [unique, not_null]
+          - name: order_id
+            tests:
+              - not_null
+              - unique
+              - relationships:
+                  to: source('ecommerce', 'orders')
+                  field: id
+          - name: method
+            tests:
+              - accepted_values:
+                  values: ['card','paypal','bank_transfer','crypto']
+          - name: status
+            tests:
+              - accepted_values:
+                  values: ['pending','completed','failed','refunded']
+
+      - name: reviews
+        description: "Customer product reviews."
+        columns:
+          - name: id
+            tests: [unique, not_null]
+          - name: rating
+            tests:
+              - not_null
+              - accepted_values:
+                  values: [1, 2, 3, 4, 5]
