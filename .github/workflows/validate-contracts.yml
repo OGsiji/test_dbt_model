@@ -8,7 +8,7 @@ on:
       - "dbt_project.yml"
       - "**/*models*.py"
       - ".retl-validator.yml"
-  
+
   workflow_dispatch:
 
 permissions:
@@ -19,27 +19,27 @@ jobs:
   validate-contracts:
     name: Validate Data Contracts
     runs-on: ubuntu-latest
-    
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-    
+
     - name: Setup Python
       uses: actions/setup-python@v4
       with:
         python-version: '3.9'
-    
+
     - name: Install data contract validator
       run: pip install data-contract-validator
-    
+
     - name: Validate contracts
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_TOKEN: ${{ secrets.API_REPO_TOKEN }}
       run: |
         contract-validator validate \
           --config .retl-validator.yml \
           --output github
-    
+
     - name: Comment on PR (if validation fails)
       if: failure()
       uses: actions/github-script@v6
@@ -50,15 +50,15 @@ jobs:
             owner: context.repo.owner,
             repo: context.repo.repo,
             body: `## 🚨 Data Contract Validation Failed
-            
+
             Your changes don't satisfy API requirements.
             Check the logs above for specific issues.
-            
+
             **Common fixes:**
             - Add missing columns to your DBT model
             - Update API models to match DBT output
             - Check for type mismatches
-            
+
             ---
             🤖 Automated by [Data Contract Validator](https://github.com/OGsiji/data-contract-validator)`
           })
