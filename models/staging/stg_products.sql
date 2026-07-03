@@ -18,7 +18,8 @@ renamed as (
         end                                         as margin_pct,
         stock                                       as stock_qty,
         is_active,
-        created_at
+        created_at,
+        current_timestamp as workflow_test_marker
     from source
 )
 
